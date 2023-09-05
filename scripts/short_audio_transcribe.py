@@ -11,7 +11,6 @@ lang2token = {
             "en": "[EN]",
         }
 def transcribe_one(audio_path):
-    print(f">>solving: {audio_path}")
     # load audio and pad/trim it to fit 30 seconds
     audio = whisper.load_audio(audio_path)
     audio = whisper.pad_or_trim(audio)
@@ -68,6 +67,7 @@ if __name__ == "__main__":
             if wavfile.startswith("processed_"):
                 continue
             try:
+                
                 wav, sr = torchaudio.load(parent_dir + speaker + "/" + wavfile, frame_offset=0, num_frames=-1, normalize=True,
                                           channels_first=True)
                 wav = wav.mean(dim=0).unsqueeze(0)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                 speaker_annos.append(save_path + "|" + speaker + "|" + text)
                 
                 processed_files += 1
-                print(f"Processed: {processed_files}/{total_files}")
+                print(f"Processed: {processed_files}/{total_files}, {wavfile}")
             except:
                 continue
 
