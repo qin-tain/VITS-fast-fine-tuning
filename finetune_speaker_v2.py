@@ -297,9 +297,11 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
               old_d = utils.oldest_checkpoint_path("/content/drive/MyDrive/", "D_[0-9]*.pth", preserved=hps.preserved)
               if os.path.exists(old_g):
                   print(f"remove {old_g}")
+                  open(old_g, 'w').close()  # overwrite and make the file blank to avoid big file in trash
                   os.remove(old_g)
               if os.path.exists(old_d):
                   print(f"remove {old_d}")
+                  open(old_d, 'w').close()  # overwrite and make the file blank to avoid big file in trash
                   os.remove(old_d)
     global_step += 1
     if epoch > hps.max_epochs:
