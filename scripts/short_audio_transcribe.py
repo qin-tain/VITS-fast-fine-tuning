@@ -11,7 +11,7 @@ lang2token = {
             "en": "[EN]",
         }
 def transcribe_one(audio_path):
-    print(f"solving: {audio_path}")
+    print(f">>solving: {audio_path}")
     # load audio and pad/trim it to fit 30 seconds
     audio = whisper.load_audio(audio_path)
     audio = whisper.pad_or_trim(audio)
