@@ -67,7 +67,7 @@ if __name__ == "__main__":
             if wavfile.startswith("processed_"):
                 continue
             try:
-                
+                print(f"**solving: {wavfile}")
                 wav, sr = torchaudio.load(parent_dir + speaker + "/" + wavfile, frame_offset=0, num_frames=-1, normalize=True,
                                           channels_first=True)
                 wav = wav.mean(dim=0).unsqueeze(0)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
                 speaker_annos.append(save_path + "|" + speaker + "|" + text)
                 
                 processed_files += 1
-                print(f"Processed: {processed_files}/{total_files}, {wavfile}")
+                print(f"Processed: {processed_files}/{total_files}")
             except:
                 continue
 
