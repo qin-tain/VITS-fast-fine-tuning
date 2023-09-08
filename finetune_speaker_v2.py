@@ -16,7 +16,6 @@ from tqdm import tqdm
 
 import librosa
 import logging
-import pathlib
 
 logging.getLogger('numba').setLevel(logging.WARNING)
 
@@ -299,10 +298,10 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
               
               def remove_file_google_colab(file_path):
                   open(file_path, 'w').close()  # overwrite and make the file blank to avoid big file in trash
-                  file_path = pathlib.Path(file_path)
-                  file_path_trash = file_path.rename(file_path.with_stem(file_path.stem + "__TRASH__"))
+                  file_path_trash = file_path+".__TRASH__"
+                  os.rename(file_path, file_path_trash)
                   os.remove(file_path_trash)
-                
+
               if os.path.exists(old_g):
                   print(f"remove {old_g}")
                   remove_file_google_colab(old_g)
