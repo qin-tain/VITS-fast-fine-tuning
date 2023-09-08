@@ -16,6 +16,7 @@ from tqdm import tqdm
 
 import librosa
 import logging
+import pathlib
 
 logging.getLogger('numba').setLevel(logging.WARNING)
 
@@ -295,14 +296,19 @@ def train_and_evaluate(rank, epoch, hps, nets, optims, schedulers, scaler, loade
               old_g = utils.oldest_checkpoint_path("/content/drive/MyDrive/", "G_[0-9]*.pth",
                                                    preserved=hps.preserved)  # Preserve 4 (default) historical checkpoints.
               old_d = utils.oldest_checkpoint_path("/content/drive/MyDrive/", "D_[0-9]*.pth", preserved=hps.preserved)
+              
+              def remove_file_google_colab(file_path):
+                  open(file_path, 'w').close()  # overwrite and make the file blank to avoid big file in trash
+                  file_path = pathlib.Path(file_path)
+                  file_path_trash = file_path.rename(file_path.with_stem(file_path.stem + "__TRASH__"))
+                  os.remove(file_path_trash)
+                
               if os.path.exists(old_g):
                   print(f"remove {old_g}")
-                  open(old_g, 'w').close()  # overwrite and make the file blank to avoid big file in trash
-                  os.remove(old_g)
+                  remove_file_google_colab(old_g)
               if os.path.exists(old_d):
                   print(f"remove {old_d}")
-                  open(old_d, 'w').close()  # overwrite and make the file blank to avoid big file in trash
-                  os.remove(old_d)
+                  remove_file_google_colab(old_d)
     global_step += 1
     if epoch > hps.max_epochs:
         print("Maximum epoch reached, closing training...")
