@@ -8,7 +8,6 @@ tensorboard
 torch
 torchvision
 torchaudio
-unidecode
 Unidecode
 pyopenjtalk==0.1.3
 jamo
