@@ -1,16 +1,13 @@
-import whisper
-import os
-import json
-import torchaudio
 import argparse
-import torch
+import json
+import os
 
-lang2token = {
-            'zh': "[ZH]",
-            'ja': "[JA]",
-            "en": "[EN]",
-        }
-def transcribe_one(audio_path):
+import torch
+import torchaudio
+import whisper
+
+
+def transcribe_one(audio_path, model):
     # load audio and pad/trim it to fit 30 seconds
     audio = whisper.load_audio(audio_path)
     audio = whisper.pad_or_trim(audio)
@@ -29,37 +26,40 @@ def transcribe_one(audio_path):
     # print the recognized text
     print(result.text)
     return lang, result.text
-if __name__ == "__main__":
+
+
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--languages", default="CJE")
     parser.add_argument("--whisper_size", default="medium")
     args = parser.parse_args()
-    if args.languages == "CJE":
-        lang2token = {
-            'zh': "[ZH]",
-            'ja': "[JA]",
-            "en": "[EN]",
-        }
-    elif args.languages == "CJ":
-        lang2token = {
-            'zh': "[ZH]",
-            'ja': "[JA]",
-        }
-    elif args.languages == "C":
-        lang2token = {
-            'zh': "[ZH]",
-        }
-    assert (torch.cuda.is_available()), "Please enable GPU in order to run Whisper!"
+
+    if not torch.cuda.is_available():
+        raise RuntimeError("Please enable GPU in order to run Whisper!")
+
+    args_token = {"C": "zh", "J": "ja", "E": "en"}
+    lang2token_map = {
+        "zh": "[ZH]",
+        "ja": "[JA]",
+        "en": "[EN]",
+    }
+    lang2token = {
+        (at := args_token[al.upper()]): lang2token_map[at]
+        for al in args.languages
+        if al in args_token
+    }
+
     model = whisper.load_model(args.whisper_size)
     parent_dir = "./custom_character_voice/"
     speaker_names = list(os.walk(parent_dir))[0][1]
     speaker_annos = []
-    total_files = sum([len(files) for r, d, files in os.walk(parent_dir)])
+    solved_files_info = []  # to save more information
+    total_files = sum(len(files) for r, d, files in os.walk(parent_dir))
     # resample audios
     # 2023/4/21: Get the target sampling rate
-    with open("./configs/finetune_speaker.json", 'r', encoding='utf-8') as f:
+    with open("./configs/finetune_speaker.json", "r", encoding="utf-8") as f:
         hps = json.load(f)
-    target_sr = hps['data']['sampling_rate']
+    target_sr = hps["data"]["sampling_rate"]
     processed_files = 0
     for speaker in speaker_names:
         for i, wavfile in enumerate(list(os.walk(parent_dir + speaker))[0][2]):
@@ -68,26 +68,38 @@ if __name__ == "__main__":
                 continue
             try:
                 print(f"**solving: {wavfile}")
-                wav, sr = torchaudio.load(parent_dir + speaker + "/" + wavfile, frame_offset=0, num_frames=-1, normalize=True,
-                                          channels_first=True)
+                wav, sr = torchaudio.load(
+                    parent_dir + speaker + "/" + wavfile,
+                    frame_offset=0,
+                    num_frames=-1,
+                    normalize=True,
+                    channels_first=True,
+                )
                 wav = wav.mean(dim=0).unsqueeze(0)
                 if sr != target_sr:
-                    wav = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)(wav)
+                    wav = torchaudio.transforms.Resample(
+                        orig_freq=sr, new_freq=target_sr
+                    )(wav)
                 if wav.shape[1] / sr > 20:
                     print(f"{wavfile} too long, ignoring\n")
-                save_path = parent_dir + speaker + "/" + f"processed_{i}.wav"
+                    continue  # add to ignore:)
+                save_file_name = f"processed_{i}.wav"
+                save_path = parent_dir + speaker + "/" + save_file_name
                 torchaudio.save(save_path, wav, target_sr, channels_first=True)
                 # transcribe text
-                lang, text = transcribe_one(save_path)
+                lang, text = transcribe_one(save_path, model)
                 if lang not in list(lang2token.keys()):
                     print(f"{lang} not supported, ignoring\n")
                     continue
+                # save more information
+                solved_files_info.append((speaker, wavfile, save_file_name, lang, text))
+
                 text = lang2token[lang] + text + lang2token[lang] + "\n"
                 speaker_annos.append(save_path + "|" + speaker + "|" + text)
-                
+
                 processed_files += 1
                 print(f"Processed: {processed_files}/{total_files}")
-            except:
+            except Exception:
                 continue
 
     # # clean annotation
@@ -101,11 +113,18 @@ if __name__ == "__main__":
     #     speaker_annos[i] = path + "|" + sid + "|" + cleaned_text
     # write into annotation
     if len(speaker_annos) == 0:
-        print("Warning: no short audios found, this IS expected if you have only uploaded long audios, videos or video links.")
-        print("this IS NOT expected if you have uploaded a zip file of short audios. Please check your file structure or make sure your audio language is supported.")
-    with open("short_character_anno.txt", 'w', encoding='utf-8') as f:
+        print(
+            "Warning: no short audios found, this IS expected if you have only uploaded long audios, videos or video links."
+        )
+        print(
+            "this IS NOT expected if you have uploaded a zip file of short audios. Please check your file structure or make sure your audio language is supported."
+        )
+    with open("short_character_anno.txt", "w", encoding="utf-8") as f:
         for line in speaker_annos:
             f.write(line)
+    with open("short_character_info.txt", "w", encoding="utf-8") as f:
+        for item in solved_files_info:
+            f.write("|".join(item) + "\n")
 
     # import json
     # # generate new config
@@ -120,3 +139,7 @@ if __name__ == "__main__":
     # with open("./configs/modified_finetune_speaker.json", 'w', encoding='utf-8') as f:
     #     json.dump(hps, f, indent=2)
     # print("finished")
+
+
+if __name__ == "__main__":
+    main()
