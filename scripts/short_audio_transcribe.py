@@ -37,7 +37,11 @@ def main():
     if not torch.cuda.is_available():
         raise RuntimeError("Please enable GPU in order to run Whisper!")
 
-    args_token = {"C": "zh", "J": "ja", "E": "en"}
+    args_token = {
+        "C": "zh",
+        "J": "ja",
+        "E": "en",
+    }
     lang2token_map = {
         "zh": "[ZH]",
         "ja": "[JA]",
