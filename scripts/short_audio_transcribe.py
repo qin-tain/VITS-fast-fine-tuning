@@ -48,9 +48,9 @@ def main():
         "en": "[EN]",
     }
     lang2token = {
-        (at := args_token[al.upper()]): lang2token_map[at]
+        (a_t := args_token[alu]): lang2token_map[a_t]
         for al in args.languages
-        if al in args_token
+        if (alu := al.upper()) in args_token
     }
 
     model = whisper.load_model(args.whisper_size)
