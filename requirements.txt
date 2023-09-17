@@ -10,7 +10,7 @@ torchvision
 torchaudio
 unidecode
 Unidecode
-pyopenjtalk  #==0.1.3
+pyopenjtalk-prebuilt
 jamo
 pypinyin
 jieba
