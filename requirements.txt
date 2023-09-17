@@ -9,7 +9,6 @@ torch
 torchvision
 torchaudio
 unidecode
-Unidecode
 pyopenjtalk-prebuilt
 jamo
 pypinyin
